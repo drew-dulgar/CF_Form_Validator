@@ -14,6 +14,7 @@ Validate forms dynamically and quickly within a Cold Fusion environment.
 	> alpha_dash :: field must only contain alpha and hyphen characters
 	> alpha_numeric :: field must only contain alphanumeric characters
 	> between[value1|value2] :: field must be between the values specified in the argument list (delimited by a pipe)
+	> boolean :: field must be a boolean value (0, 1, false, true, no, yes)
 	> contains[value] :: field must contain 'value'
 	> does_not_contain[value] :: field must not contain 'value'
 	> equals[value] :: field must equal 'value'
