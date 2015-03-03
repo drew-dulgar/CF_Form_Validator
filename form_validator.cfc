@@ -11,6 +11,7 @@
 	> required :: requires the field
 	> required[fieldName] :: requires the field if 'fieldName' has any value
 	> required[fieldName=value] :: requires the field if 'fieldName' has a value of 'value'
+	> required[atleastX=fieldName1|fieldNameN...] :: requires the field if at least X number of fields specified have a value
 	> (!)matches[fieldName] :: field must match 'fieldName'
 	> alpha :: field must only contain alpha characters
 	> alpha_dash :: field must only contain alpha and hyphen characters
@@ -76,7 +77,9 @@
 	<cfset variables.run = false>
 	<cfset variables.trigger = {}>
 	<cfset variables.interceptionMethods = {}>
-	
+    <!--- When given a comma delimited list of validation routes, find either 'routine_name' OR 'routine_name[arguments]' --->
+    <cfset variables.routineRegex = '(\!)?([^\[\],]+)(?:\[([^\]]*)\])?' />
+    
 	<!--- Static list of CFCs to automatically import on instantiation --->
 	<cfset variables.importCFCs = [] />
 
@@ -85,48 +88,48 @@
 	<cfset variables.settings.persistDefaultValue = false>
 	<cfset variables.settings.errors = {}>
 	<cfset variables.settings.errors.unique = {}>
-	<cfset variables.settings.errors['required'] = 'The field [LABEL] is required.'>
-	<cfset variables.settings.errors['matches'] = 'The [LABEL] field does not match the [ARGUMENT] field.'>
-    <cfset variables.settings.errors['!matches'] = 'The [LABEL] field can not match the [ARGUMENT] field.'>
-	<cfset variables.settings.errors['min_length'] = 'The [LABEL] field must be at least [ARGUMENT] character(s).'>
-	<cfset variables.settings.errors['max_length'] = 'The [LABEL] field must be at most [ARGUMENT] character(s).'>
-	<cfset variables.settings.errors['exact_length'] = 'The [LABEL] field must be exactly [ARGUMENT] characters(s).'>
-	<cfset variables.settings.errors['greater_than'] = 'The [LABEL] field must be greater than [ARGUMENT].'>
-    <cfset variables.settings.errors['greater_than_datetime'] = 'The [LABEL] field must be after [ARGUMENT_VALUE].'>
-    <cfset variables.settings.errors['greater_than_or_equal_to'] = 'The [LABEL] field must be greater than or equal to [ARGUMENT].'>
-    <cfset variables.settings.errors['greater_than_or_equal_to_datetime'] = 'The [LABEL] field must be on or after [ARGUMENT_VALUE].'>
-	<cfset variables.settings.errors['less_than'] = 'The [LABEL] field must be less than [ARGUMENT].'>
-    <cfset variables.settings.errors['less_than_datetime'] = 'The [LABEL] field must be before [ARGUMENT_VALUE].'>
-    <cfset variables.settings.errors['less_than_or_equal_to'] = 'The [LABEL] field must be less than or equal to [ARGUMENT].'>
-    <cfset variables.settings.errors['less_than_or_equal_to_datetime'] = 'The [LABEL] field must be on or before [ARGUMENT_VALUE].'>
-	<cfset variables.settings.errors['select_at_least'] = 'Select at least [ARGUMENT] item(s) for the [LABEL] field.'>
-	<cfset variables.settings.errors['select_no_more_than'] = 'Select no more than [ARGUMENT] item(s) for the [LABEL] field.'>
-	<cfset variables.settings.errors['contains'] = 'The [LABEL] field must contain the value [ARGUMENT].'>
-	<cfset variables.settings.errors['does_not_contain'] = 'The [LABEL] field should not contain the [ARGUMENT] field.'>
-	<cfset variables.settings.errors['valid_email'] = 'The [LABEL] field is not a valid email.'>
-	<cfset variables.settings.errors['alpha'] = 'The [LABEL] field can only be alpha characters.'>
-	<cfset variables.settings.errors['alpha_numeric'] = 'The [LABEL] field can only be alpha numeric characters and numbers.'>
-	<cfset variables.settings.errors['alpha_dash'] = 'The [LABEL] field can only contain alpha numeric characters, underscores, and dashes.'>
-	<cfset variables.settings.errors['numeric'] = 'The [LABEL] field must be numeric.'>
-	<cfset variables.settings.errors['integer'] = 'The [LABEL] field must be an integer.'>
-	<cfset variables.settings.errors['is_natural'] = 'The [LABEL] field must be a natural number.'>
-	<cfset variables.settings.errors['is_natural_no_zero'] = 'The [LABEL] must be a natural number greater than 0.'>
-	<cfset variables.settings.errors['valid_base64'] = 'The [LABEL] field must be a valid base64 string.'>
-	<cfset variables.settings.errors['is_valid_value'] = 'The [LABEL] field does not match the [ARGUMENT] field.'>
-	<cfset variables.settings.errors['value_is_one_of'] = 'The [LABEL] field does contain one of the values in [ARGUMENT].'>
-	<cfset variables.settings.errors['lookup_value'] = 'The [LABEL] field does not have a valid value.'>
-	<cfset variables.settings.errors['valid_url'] = 'The [LABEL] field must be a valid url.'>
-	<cfset variables.settings.errors['valid_ip'] = 'The [LABEL] field must be a valid ip address.'>
-	<cfset variables.settings.errors['valid_ssn'] = 'The [LABEL] field is not a valid social security number.'>
-	<cfset variables.settings.errors['valid_postal'] = 'The [LABEL] field is not a valid postal address.'>
-    <cfset variables.settings.errors['valid_date'] = 'The [LABEL] field is not a valid date.'>
-	<cfset variables.settings.errors['valid_time'] = 'The [LABEL] field is not a valid time.'>
-	<cfset variables.settings.errors['valid_phoneUS'] = 'The [LABEL] field is not a valid phone number.'>
-	<cfset variables.settings.errors['valid_currencyUS'] = 'The [LABEL] is not a valid currency amount.'>
-	<cfset variables.settings.errors['valid_creditcard'] = 'The [LABEL] field is not a valid credit card number.'>
-	<cfset variables.settings.errors['valid_file'] = 'The [LABEL] field does not contain a valid file type.'>
-	<cfset variables.settings.errors['between'] = 'The [LABEL] field must be between [ARGUMENT] characters.'>
-    <cfset variables.settings.errors['boolean'] = 'The [LABEL] field must be a boolean value.'>
+	<cfset variables.settings.errors['required'] = '[LABEL] is required'>
+	<cfset variables.settings.errors['matches'] = '[LABEL] field does not match [ARGUMENT] field'>
+    <cfset variables.settings.errors['!matches'] = '[LABEL] field can not match [ARGUMENT] field'>
+	<cfset variables.settings.errors['min_length'] = '[LABEL] field must be at least [ARGUMENT] character(s)'>
+	<cfset variables.settings.errors['max_length'] = '[LABEL] field must be at most [ARGUMENT] character(s)'>
+	<cfset variables.settings.errors['exact_length'] = '[LABEL] field must be exactly [ARGUMENT] characters(s)'>
+	<cfset variables.settings.errors['greater_than'] = '[LABEL] field must be greater than [ARGUMENT]'>
+    <cfset variables.settings.errors['greater_than_datetime'] = '[LABEL] field must be after [ARGUMENT_VALUE]'>
+    <cfset variables.settings.errors['greater_than_or_equal_to'] = '[LABEL] field must be greater than or equal to [ARGUMENT]'>
+    <cfset variables.settings.errors['greater_than_or_equal_to_datetime'] = '[LABEL] field must be on or after [ARGUMENT_VALUE]'>
+	<cfset variables.settings.errors['less_than'] = '[LABEL] field must be less than [ARGUMENT]'>
+    <cfset variables.settings.errors['less_than_datetime'] = '[LABEL] field must be before [ARGUMENT_VALUE]'>
+    <cfset variables.settings.errors['less_than_or_equal_to'] = '[LABEL] field must be less than or equal to [ARGUMENT]'>
+    <cfset variables.settings.errors['less_than_or_equal_to_datetime'] = '[LABEL] field must be on or before [ARGUMENT_VALUE]'>
+	<cfset variables.settings.errors['select_at_least'] = 'Select at least [ARGUMENT] item(s) for [LABEL]'>
+	<cfset variables.settings.errors['select_no_more_than'] = 'Select no more than [ARGUMENT] item(s) for [LABEL]'>
+	<cfset variables.settings.errors['contains'] = '[LABEL] must contain the value [ARGUMENT]'>
+	<cfset variables.settings.errors['does_not_contain'] = '[LABEL] should not contain [ARGUMENT]'>
+	<cfset variables.settings.errors['valid_email'] = '[LABEL] is not a valid email address'>
+	<cfset variables.settings.errors['alpha'] = '[LABEL] can only be alpha characters'>
+	<cfset variables.settings.errors['alpha_numeric'] = '[LABEL] can only be alpha numeric characters and numbers'>
+	<cfset variables.settings.errors['alpha_dash'] = '[LABEL] can only contain alpha numeric characters, underscores, and dashes'>
+	<cfset variables.settings.errors['numeric'] = '[LABEL] must be numeric'>
+	<cfset variables.settings.errors['integer'] = '[LABEL] must be an integer'>
+	<cfset variables.settings.errors['is_natural'] = '[LABEL] must be a natural number'>
+	<cfset variables.settings.errors['is_natural_no_zero'] = '[LABEL] must be a natural number greater than 0'>
+	<cfset variables.settings.errors['valid_base64'] = '[LABEL] must be a valid base64 string'>
+	<cfset variables.settings.errors['is_valid_value'] = '[LABEL] does not match [ARGUMENT]'>
+	<cfset variables.settings.errors['value_is_one_of'] = '[LABEL] does contain one of the values in [ARGUMENT]'>
+	<cfset variables.settings.errors['lookup_value'] = '[LABEL] does not have a valid value'>
+	<cfset variables.settings.errors['valid_url'] = '[LABEL] must be a valid url'>
+	<cfset variables.settings.errors['valid_ip'] = '[LABEL] must be a valid ip address'>
+	<cfset variables.settings.errors['valid_ssn'] = '[LABEL] is not a valid social security number'>
+	<cfset variables.settings.errors['valid_postal'] = '[LABEL] is not a valid postal address'>
+    <cfset variables.settings.errors['valid_date'] = '[LABEL] is not a valid date'>
+	<cfset variables.settings.errors['valid_time'] = '[LABEL] is not a valid time'>
+	<cfset variables.settings.errors['valid_phoneUS'] = '[LABEL] is not a valid phone number'>
+	<cfset variables.settings.errors['valid_currencyUS'] = '[LABEL] is not a valid currency amount'>
+	<cfset variables.settings.errors['valid_creditcard'] = '[LABEL] is not a valid credit card number'>
+	<cfset variables.settings.errors['valid_file'] = '[LABEL] does not contain a valid file type'>
+	<cfset variables.settings.errors['between'] = '[LABEL] must be between [ARGUMENT] characters'>
+    <cfset variables.settings.errors['boolean'] = '[LABEL] must be a boolean value'>
 
 
 	<cfset variables.mimeTypes = {}>
@@ -135,10 +138,6 @@
 		<cfargument name="collection" required="true" type="struct" >
 
 		<cfset var local = structNew()>
-
-		<cfset variables.rc = arguments.collection>
-
-		<cfset structDelete(arguments, 'collection')>
 
 		<cfif NOT structIsEmpty(arguments)>
 			<cfloop collection="#arguments#" item="local.key">
@@ -161,6 +160,27 @@
 		<!--- Return instance --->
 		<cfreturn this>
 	</cffunction>
+    
+    <cffunction name="clearFields" access="public" returntype="void" output="false">
+    	<cfset structClear(variables.rc) />
+        <cfset variables.errors = [] />
+        <cfset structClear(variables.errorFields) />
+    </cffunction>
+    
+    <cffunction name="setFieldValues" access="public" returntype="void" output="false">
+    	<cfargument name="data" type="struct" required="true" />
+        <cfargument name="append" type="boolean" required="false" default="false" />
+        
+        <cfif !arguments.append>
+        	<cfset variables.rc = {} />
+        </cfif>
+        
+        <cfloop collection="#arguments.data#" item="local.field">
+        	<cfif isSimpleValue(arguments.data[local.field])>
+            	<cfset variables.rc[local.field] = arguments.data[local.field] />
+            </cfif>
+        </cfloop>
+    </cffunction>
 
 	<cffunction name="getValue" access="public" returntype="string" output="false">
 		<cfargument name="item" type="string" required="true">
@@ -233,9 +253,12 @@
 	<cffunction name="setPostValidation" access="public" returntype="void" output="false"
     			hint="Eexecutes after all form fields get validated.">
 		<cfargument name="function" required="true" type="any">
-
-		<cfset variables.interceptionMethods['postInterception'] = arguments.function>
-
+        <cfargument name="overwriteExisting" required="false" type="boolean" default="true">
+        
+        <cfif !structKeyExists(variables.interceptionMethods, 'postInterception') || 
+			  (arguments.overwriteExisting && structKeyExists(variables.interceptionMethods, 'postInterception'))>
+       		<cfset variables.interceptionMethods['postInterception'] = arguments.function>
+        </cfif>
 	</cffunction>
 
 	<cffunction name="setLookupValue" access="public" returntype="void" output="false">
@@ -287,14 +310,44 @@
 		<cfargument name="name" required="true" type="string">
 		<cfargument name="label" required="false" type="string">
 		<cfargument name="validation" required="false" type="string">
-
-		<cfif arguments.label EQ ''>
-			<cfset arguments.label = arguments.name>
-		</cfif>
-
+		
+ 
+        
 		<cfif structKeyExists(variables.validation, arguments.name)>
-			<cfset variables.validation[arguments.name].validators = variables.validation[arguments.name].validators & ',' & arguments.validation>
+        	
+            <cfset local.validators = variables.validation[arguments.name].validators />
+        
+			<cfset local.pattern = createObject("java", "java.util.regex.Pattern").compile(variables.routineRegex) />
+            
+			<cfset local.currentValidations = local.pattern.matcher(variables.validation[arguments.name].validators) />
+            <cfset local.newValidations = local.pattern.matcher(arguments.validation) />
+            
+            <!--- Convert a list of the currently set validations to an array for checking --->
+            <cfset local.arCurrentValidations = arrayNew(1) />
+            <cfloop condition="#local.currentValidations.find()#">
+            	<cfset arrayAppend(local.arCurrentValidations, local.currentValidations.group()) />
+            </cfloop>
+			
+			<!--- append the new validation routes to the current validation routes if it doesn't exist --->
+			<cfloop condition="#local.newValidations.find()#">
+				<cfif arrayFindNoCase(local.arCurrentValidations, local.newValidations.group()) EQ 0>
+                	<cfset arrayAppend(local.arCurrentValidations, local.newValidations.group()) />
+                </cfif>
+        	</cfloop>        
+        
+        	<!--- was our label updated? If so, set the change here --->
+        	<cfif structKeyExists(arguments, 'label') AND len(arguments.label) GT 0>
+            	<cfset variables.validation[arguments.name].label = arguments.label>
+            </cfif>            
+            
+			<cfset variables.validation[arguments.name].validators = arrayToList(local.arCurrentValidations)>
 		<cfelse>
+        
+        	<!--- set the label to the field name if it wasn't explicitly set --->
+			<cfif !structKeyExists(arguments, 'label') || arguments.label EQ ''>
+                <cfset arguments.label = arguments.name>
+            </cfif>
+            
 			<cfset arrayAppend(variables.validation_order, arguments.name)>
 			<cfset variables.validation[arguments.name] = {}>
 			<cfset variables.validation[arguments.name].label = arguments.label>
@@ -508,10 +561,8 @@
         <!--- get the value of this field --->
 		<cfset local.value = getValue(arguments.field) />
 		
-        <!--- find either 'routine_name' OR 'routine_name[arguments]' --->
-        <cfset local.searchRegex = '(\!)?([^\[\],]+)(?:\[([^\]]*)\])?' />	
-		
-		<cfset local.pattern = createObject("java", "java.util.regex.Pattern").compile(local.searchRegex) />
+	
+		<cfset local.pattern = createObject("java", "java.util.regex.Pattern").compile(variables.routineRegex) />
 		<cfset local.matcher = local.pattern.matcher(arguments.validations) />
 		<cfset local.arValidation = [] />
 		
@@ -628,9 +679,12 @@
         
         <!--- is the argument field an actual field passed to us for validation? --->
         <cfset local.argLabel = getLabel(arguments.argument) />
-        <cfif structKeyExists(variables.rc, arguments.argument) && local.argLabel NEQ "">
+	
+        <cfif structKeyExists(variables.rc, arguments.argument)>
         	<cfset local.message = Replace(local.message, '[ARGUMENT_VALUE]', variables.rc[arguments.argument], 'all') />
-        	<cfset local.message = Replace(local.message, '[ARGUMENT]', local.argLabel, 'all') />
+            <cfif local.argLabel NEQ "">
+	        	<cfset local.message = Replace(local.message, '[ARGUMENT]', local.argLabel, 'all') />
+            </cfif>
         <cfelse>
 			<cfset local.message = Replace(local.message, '[ARGUMENT]', arguments.argument, 'all') />
         </cfif>
@@ -659,25 +713,44 @@
 		<cfset variables.errorFields[arguments.field] = variables.errorFields[arguments.field] + 1 />              
         
     </cffunction>
+    
+    <cffunction name="getFieldError" output="false" access="public" returntype="string">
+    	<cfargument name="field" required="true" type="string" />
+        
+        <cfset errorMessage = '' />
+        
+        <cfloop array="#variables.errors#" index="error">
+        	<cfif error.field EQ arguments.field>
+            	<cfset errorMessage = error.message />
+                <cfbreak />
+            </cfif>
+        </cfloop>
+        
+        <cfreturn errorMessage />
+    </cffunction>
 
+	<!--- determines whether a specific field has an error --->
+	<cffunction name="fieldHasError" output="false" access="public" returntype="boolean">
+    	<cfargument name="field" requried="true" type="string" />
+        
+		<cfreturn fieldListHasError(arguments.field) />
+    </cffunction>
+    
+    <!--- returns true/false based on whether all of the fields given collectively have or do not have errors --->
+    <cffunction name="fieldListHasError" access="public" output="false" returntype="boolean">
+    	<cfargument name="fieldList" required="true" type="string" />
+        
+        <cfset var local = structNew() />
+        
+        <cfset local.errors = 0 />
+        
+        <cfloop list="#arguments.fieldList#" index="local.field">
+        	<cfset local.errors = local.errors + fieldErrorCount(local.field) />
+        </cfloop>
+                
+        <cfreturn local.errors GT 0 />
+    </cffunction>    
 
-	<cffunction name="getErrorMessage" output="false" access="private" returntype="string">
-		<cfargument name="field" required="true" type="string">
-		<cfargument name="method" required="false" type="string">
-
-		<cfset var local = {}>
-
-		<cfif structKeyExists(arguments, 'method') AND structKeyExists(variables.settings.errors.unique, arguments.field) AND structKeyExists(variables.settings.errors.unique[arguments.field], arguments.method)>
-			<cfset local.message = variables.settings.errors.unique[arguments.field][arguments.method]>
-		<cfelseif structKeyExists(variables.settings.errors, arguments.method)>
-			<cfset local.message = variables.settings.errors[arguments.method]>
-		<cfelse>
-			<cfset local.message = 'Unable to locate an error message for method ' & arguments.method & ' for field: [LABEL]'>
-		</cfif>
-
-		<cfreturn local.message>
-	</cffunction>
-	
     <!--- return the struct of fields that have errors and the total count of errors --->
 	<cffunction name="getErrorFields" output="false" access="public" returntype="struct">
 		<cfreturn variables.errorFields>
@@ -701,20 +774,7 @@
         <cfreturn local.errors />
     </cffunction>
     
-    <!--- returns the total errors present on a given list of fields --->
-    <cffunction name="fieldListHasError" access="public" output="false" returntype="boolean">
-    	<cfargument name="fieldList" required="true" type="string" />
-        
-        <cfset var local = structNew() />
-        
-        <cfset local.errors = 0 />
-        
-        <cfloop list="#arguments.fieldList#" index="local.field">
-        	<cfset local.errors = local.errors + fieldErrorCount(local.field) />
-        </cfloop>
-                
-        <cfreturn local.errors GT 0 />
-    </cffunction>
+
 
 	<cffunction name="getFieldLabel" output="false" access="public" returntype="string">
 		<cfargument name="field" required="true" type="string">
@@ -724,6 +784,23 @@
 		</cfif>
 
 		<cfreturn ''>
+	</cffunction>
+
+	<cffunction name="getErrorMessage" output="false" access="private" returntype="string">
+		<cfargument name="field" required="true" type="string">
+		<cfargument name="method" required="false" type="string">
+
+		<cfset var local = {}>
+
+		<cfif structKeyExists(arguments, 'method') AND structKeyExists(variables.settings.errors.unique, arguments.field) AND structKeyExists(variables.settings.errors.unique[arguments.field], arguments.method)>
+			<cfset local.message = variables.settings.errors.unique[arguments.field][arguments.method]>
+		<cfelseif structKeyExists(variables.settings.errors, arguments.method)>
+			<cfset local.message = variables.settings.errors[arguments.method]>
+		<cfelse>
+			<cfset local.message = 'Unable to locate an error message for method ' & arguments.method & ' for field: [LABEL]'>
+		</cfif>
+
+		<cfreturn local.message>
 	</cffunction>
 
 	<cffunction name="importRoutines" output="true" access="public" returntype="void">
@@ -830,9 +907,8 @@
 						<cfset arrayAppend(local.fieldLabels, getFieldLabel(local.k))>
 					</cfloop>
 					<cfset setFieldErrorMessage(arguments.field, "required", "You must supply a value for one of the following fields: #arrayToList(local.fieldLabels, ", ")#.")>
-					<cfreturn false>
 				</cfif>
-				<cfreturn true>
+                <cfreturn false>
 			</cfif>
 		<cfelseif structKeyExists(variables.rc, local.arg)>
 			<cfif listLen(arguments.argument, "=") EQ 2 AND len(trim(local.val)) GT 0>
