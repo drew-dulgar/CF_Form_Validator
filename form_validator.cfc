@@ -77,8 +77,8 @@
 	<cfset variables.run = false>
 	<cfset variables.trigger = {}>
 	<cfset variables.interceptionMethods = {}>
-    <!--- When given a comma delimited list of validation routes, find either 'routine_name' OR 'routine_name[arguments]' --->
-    <cfset variables.routineRegex = '(\!)?([^\[\],]+)(?:\[([^\]]*)\])?' />
+	<!--- When given a comma delimited list of validation routes, find either 'routine_name' OR 'routine_name[arguments]' --->
+	<cfset variables.routineRegex = '(\!)?([^\[\],]+)(?:\[([^\]]*)\])?' />
     
 	<!--- Static list of CFCs to automatically import on instantiation --->
 	<cfset variables.importCFCs = [] />
@@ -90,18 +90,18 @@
 	<cfset variables.settings.errors.unique = {}>
 	<cfset variables.settings.errors['required'] = '[LABEL] is required'>
 	<cfset variables.settings.errors['matches'] = '[LABEL] field does not match [ARGUMENT] field'>
-    <cfset variables.settings.errors['!matches'] = '[LABEL] field can not match [ARGUMENT] field'>
+   	<cfset variables.settings.errors['!matches'] = '[LABEL] field can not match [ARGUMENT] field'>
 	<cfset variables.settings.errors['min_length'] = '[LABEL] field must be at least [ARGUMENT] character(s)'>
 	<cfset variables.settings.errors['max_length'] = '[LABEL] field must be at most [ARGUMENT] character(s)'>
 	<cfset variables.settings.errors['exact_length'] = '[LABEL] field must be exactly [ARGUMENT] characters(s)'>
 	<cfset variables.settings.errors['greater_than'] = '[LABEL] field must be greater than [ARGUMENT]'>
-    <cfset variables.settings.errors['greater_than_datetime'] = '[LABEL] field must be after [ARGUMENT_VALUE]'>
-    <cfset variables.settings.errors['greater_than_or_equal_to'] = '[LABEL] field must be greater than or equal to [ARGUMENT]'>
-    <cfset variables.settings.errors['greater_than_or_equal_to_datetime'] = '[LABEL] field must be on or after [ARGUMENT_VALUE]'>
+   	<cfset variables.settings.errors['greater_than_datetime'] = '[LABEL] field must be after [ARGUMENT_VALUE]'>
+   	<cfset variables.settings.errors['greater_than_or_equal_to'] = '[LABEL] field must be greater than or equal to [ARGUMENT]'>
+	<cfset variables.settings.errors['greater_than_or_equal_to_datetime'] = '[LABEL] field must be on or after [ARGUMENT_VALUE]'>
 	<cfset variables.settings.errors['less_than'] = '[LABEL] field must be less than [ARGUMENT]'>
-    <cfset variables.settings.errors['less_than_datetime'] = '[LABEL] field must be before [ARGUMENT_VALUE]'>
-    <cfset variables.settings.errors['less_than_or_equal_to'] = '[LABEL] field must be less than or equal to [ARGUMENT]'>
-    <cfset variables.settings.errors['less_than_or_equal_to_datetime'] = '[LABEL] field must be on or before [ARGUMENT_VALUE]'>
+	<cfset variables.settings.errors['less_than_datetime'] = '[LABEL] field must be before [ARGUMENT_VALUE]'>
+	<cfset variables.settings.errors['less_than_or_equal_to'] = '[LABEL] field must be less than or equal to [ARGUMENT]'>
+	<cfset variables.settings.errors['less_than_or_equal_to_datetime'] = '[LABEL] field must be on or before [ARGUMENT_VALUE]'>
 	<cfset variables.settings.errors['select_at_least'] = 'Select at least [ARGUMENT] item(s) for [LABEL]'>
 	<cfset variables.settings.errors['select_no_more_than'] = 'Select no more than [ARGUMENT] item(s) for [LABEL]'>
 	<cfset variables.settings.errors['contains'] = '[LABEL] must contain the value [ARGUMENT]'>
@@ -122,15 +122,14 @@
 	<cfset variables.settings.errors['valid_ip'] = '[LABEL] must be a valid ip address'>
 	<cfset variables.settings.errors['valid_ssn'] = '[LABEL] is not a valid social security number'>
 	<cfset variables.settings.errors['valid_postal'] = '[LABEL] is not a valid postal address'>
-    <cfset variables.settings.errors['valid_date'] = '[LABEL] is not a valid date'>
+	<cfset variables.settings.errors['valid_date'] = '[LABEL] is not a valid date'>
 	<cfset variables.settings.errors['valid_time'] = '[LABEL] is not a valid time'>
 	<cfset variables.settings.errors['valid_phoneUS'] = '[LABEL] is not a valid phone number'>
 	<cfset variables.settings.errors['valid_currencyUS'] = '[LABEL] is not a valid currency amount'>
 	<cfset variables.settings.errors['valid_creditcard'] = '[LABEL] is not a valid credit card number'>
 	<cfset variables.settings.errors['valid_file'] = '[LABEL] does not contain a valid file type'>
 	<cfset variables.settings.errors['between'] = '[LABEL] must be between [ARGUMENT] characters'>
-    <cfset variables.settings.errors['boolean'] = '[LABEL] must be a boolean value'>
-
+	<cfset variables.settings.errors['boolean'] = '[LABEL] must be a boolean value'>
 
 	<cfset variables.mimeTypes = {}>
 
